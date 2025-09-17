@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" 
+xmlns:h="http://jakarta.ee/xml/ns/jakartaee">
+<h:head>
+    <title>Total a Pagar</title>
+</h:head>
+<h:body>
+    <h2>Total a Pagar:</h2>
+    <h:outputText value="Empleado #{empleadoBean.empleado.nombres} con ID #{empleadoBean.empleado.id} debe recibir: " />
+    <h:outputText value="#{empleadoBean.empleado.totalPagar}" />
+</h:body>
+</html>

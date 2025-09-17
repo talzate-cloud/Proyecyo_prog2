@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:h="jakarta.faces.html"
+xmlns:p="http://primefaces.org/ui" xmlns:f="jakarta.faces.core">
+<h:head>
+<title>Registro de Empleado</title>
+</h:head>
+<h:body>
+<h2>Ingrese los datos del empleado</h2>
+<h:form>
+<p:messages id="msgs" closable="true" />
+<p:panel header="Datos del Empleado">
+
+<p:outputLabel for="id" value="ID del Empleado:" />
+<p:inputText id="id" name="txtId" value="#{empleadoBean.empleado.id}" label="ID"
+required="true" placeholder="Ingrese el ID">
+<f:validateLongRange minimum="1" />
+<f:ajax event="blur" render="msgs" />
+</p:inputText>
+
+<p:outputLabel for="nombres" value="Nombres Completos:" />
+<p:inputText id="nombres" name="txtNombres" value="#{empleadoBean.empleado.nombres}"
+label="Nombres" required="true" placeholder="Ingrese nombres completos">
+<f:ajax event="blur" render="msgs" />
+</p:inputText>
+
+<p:outputLabel for="salario" value="Salario Base Mensual:" />
+<p:inputNumber id="salario" name="txtSalario" value="#{empleadoBean.empleado.salario}"
+label="Salario" required="true" placeholder="Salario en pesos">
+<f:validateDoubleRange minimum="1000000" />
+<f:ajax event="blur" render="msgs" />
+</p:inputNumber>
+
+<p:outputLabel for="dias" value="Días Trabajados:" />
+<p:inputNumber id="dias" name="txtDias" value="#{empleadoBean.empleado.dias}"
+label="Días Trabajados" required="true" placeholder="Días (1-30)">
+<f:validateLongRange minimum="1" maximum="30" />
+<f:ajax event="blur" render="msgs" />
+</p:inputNumber>
+
+<p:commandButton value="Calcular"
+update="total" icon="pi pi-check" />
+
+<p:spacer height="20" />
+
+<p:outputPanel id="total">
+
+    <p:panel header="Resultado">
+        <h:outputText value="Total a pagar: #{empleadoBean.empleado.totalPagar}" />
+    </p:panel>
+
+    <p:panel header="DETALLES DE LA NÓMINA" style="margin-top: 15px;" 
+             rendered="#{empleadoBean.empleado.nombres != null and empleadoBean.empleado.nombres != ''}">
+        
+        <h4>👤 EMPLEADO: #{empleadoBean.empleado.nombres} (ID: #{empleadoBean.empleado.id})</h4>
+        <p><strong>Días trabajados:</strong> #{empleadoBean.empleado.dias} días</p>
+
+        <hr/>
+
+        <h4 style="color: green;">💰 DEVENGADOS</h4>
+        <p><strong>Salario Base:</strong> #{empleadoBean.empleado.salarioFormateado}</p>
+        <p><strong>Salario Mensual:</strong> #{empleadoBean.empleado.salarioMensualFormateado}</p>
+        <p><strong>Auxilio de Transporte:</strong> #{empleadoBean.empleado.auxilioTransporteFormateado}</p>
+        <p><strong>TOTAL DEVENGADOS:</strong> <span style="color: green; font-weight: bold;">#{empleadoBean.empleado.totalDevengadosFormateado}</span></p>
+
+        <hr/>
+
+        <h4 style="color: red;">📉 DESCUENTOS</h4>
+        <p><strong>Salud (4%):</strong> #{empleadoBean.empleado.descuentoSaludFormateado}</p>
+        <p><strong>Pensión (4%):</strong> #{empleadoBean.empleado.descuentoPensionFormateado}</p>
+        <p><strong>TOTAL DESCUENTOS:</strong> <span style="color: red; font-weight: bold;">#{empleadoBean.empleado.totalDescuentosFormateado}</span></p>
+
+        <hr/>
+
+        <h4 style="color: blue;">💵 NETO A PAGAR</h4>
+        <p><strong>Total Devengados:</strong> #{empleadoBean.empleado.totalDevengadosFormateado}</p>
+        <p><strong>(-) Total Descuentos:</strong> #{empleadoBean.empleado.totalDescuentosFormateado}</p>
+        <p><strong>NETO A PAGAR:</strong> <span style="color: blue; font-weight: bold; font-size: 18px;">#{empleadoBean.empleado.netoAPagarFormateado}</span></p>
+
+    </p:panel>
+</p:outputPanel>
+
+</p:panel>
+</h:form>
+</h:body>
+</html>
