@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:ui="jakarta.faces.facelets">
+<h:head>
+    <title>Atrapa Bolsas - Club Penguin</title>
+    <style>
+        body {
+            background: linear-gradient(180deg, #3d9be9 0%, #0c4a74 100%);
+            min-height: 100vh;
+            margin: 0;
+            font-family: "Trebuchet MS", Arial, sans-serif;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .contenedor {
+            width: 90%;
+            max-width: 960px;
+            padding: 24px;
+            background: rgba(12, 28, 66, 0.8);
+            border-radius: 18px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .instrucciones {
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        canvas {
+            display: block;
+            margin: 18px auto;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.05) 100%);
+            border: 6px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            font-size: 1.1rem;
+        }
+
+        .hud span strong {
+            color: #ffe066;
+        }
+
+        #mensajeFinal {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 1.2rem;
+            min-height: 1.2rem;
+        }
+
+        #reiniciar {
+            display: block;
+            margin: 16px auto 0;
+            background-color: #ffe066;
+            color: #0c1c42;
+            border: none;
+            border-radius: 24px;
+            padding: 10px 26px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #reiniciar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li + li {
+            margin-top: 6px;
+        }
+    </style>
+</h:head>
+<h:body>
+    <div class="contenedor">
+        <h1>Mini juego: Atrapa Bolsas</h1>
+        <p class="instrucciones">
+            <h:outputText value="#{atrapaBolsasBean.instrucciones}" />
+        </p>
+        <ul>
+            <ui:repeat value="#{atrapaBolsasBean.consejos}" var="tip">
+                <li><h:outputText value="#{tip}" /></li>
+            </ui:repeat>
+        </ul>
+
+        <div class="hud">
+            <span>Puntaje: <strong id="puntaje">#{atrapaBolsasBean.estadoInicial.puntaje}</strong></span>
+            <span>Vidas: <strong id="vidas">#{atrapaBolsasBean.estadoInicial.vidas}</strong></span>
+            <span>Nivel: <strong id="nivel">#{atrapaBolsasBean.estadoInicial.nivel}</strong></span>
+        </div>
+
+        <canvas id="juego" width="720" height="440" aria-label="Zona de juego para atrapar bolsas"></canvas>
+        <div id="mensajeFinal"></div>
+        <button type="button" id="reiniciar">Reiniciar</button>
+    </div>
+
+    <h:outputScript>
+        const estadoInicial = {
+            puntaje: #{atrapaBolsasBean.estadoInicial.puntaje},
+            vidas: #{atrapaBolsasBean.estadoInicial.vidas},
+            nivel: #{atrapaBolsasBean.estadoInicial.nivel},
+            velocidadBolsa: #{atrapaBolsasBean.estadoInicial.velocidadBolsa}
+        };
+    </h:outputScript>
+    <h:outputScript>
+        (function () {
+            const canvas = document.getElementById('juego');
+            const contexto = canvas.getContext('2d');
+            const marcadorPuntaje = document.getElementById('puntaje');
+            const marcadorVidas = document.getElementById('vidas');
+            const marcadorNivel = document.getElementById('nivel');
+            const botonReiniciar = document.getElementById('reiniciar');
+            const mensajeFinal = document.getElementById('mensajeFinal');
+
+            const pinguino = {
+                ancho: 70,
+                alto: 70,
+                x: canvas.width / 2 - 35,
+                y: canvas.height - 85,
+                velocidad: 320
+            };
+
+            let bolsas = [];
+            let puntaje = estadoInicial.puntaje;
+            let vidas = estadoInicial.vidas;
+            let nivel = estadoInicial.nivel;
+            let velocidadBaseBolsa = estadoInicial.velocidadBolsa;
+            let activo = true;
+            let ultimoTiempo = performance.now();
+            let acumuladorAparicion = 0;
+
+            const teclas = {
+                izquierda: false,
+                derecha: false
+            };
+
+            document.addEventListener('keydown', (evento) => {
+                if (evento.key === 'ArrowLeft') {
+                    teclas.izquierda = true;
+                } else if (evento.key === 'ArrowRight') {
+                    teclas.derecha = true;
+                }
+            });
+
+            document.addEventListener('keyup', (evento) => {
+                if (evento.key === 'ArrowLeft') {
+                    teclas.izquierda = false;
+                } else if (evento.key === 'ArrowRight') {
+                    teclas.derecha = false;
+                }
+            });
+
+            botonReiniciar.addEventListener('click', reiniciarJuego);
+
+            function reiniciarJuego() {
+                puntaje = estadoInicial.puntaje;
+                vidas = estadoInicial.vidas;
+                nivel = estadoInicial.nivel;
+                velocidadBaseBolsa = estadoInicial.velocidadBolsa;
+                bolsas = [];
+                activo = true;
+                mensajeFinal.textContent = '';
+                marcadorPuntaje.textContent = puntaje;
+                marcadorVidas.textContent = vidas;
+                marcadorNivel.textContent = nivel;
+                ultimoTiempo = performance.now();
+                acumuladorAparicion = 0;
+                solicitarFotograma();
+            }
+
+            function solicitarFotograma() {
+                requestAnimationFrame(buclePrincipal);
+            }
+
+            function crearBolsa() {
+                const tamano = 42;
+                const x = Math.random() * (canvas.width - tamano);
+                const velocidad = velocidadBaseBolsa + Math.random() * nivel * 0.7;
+                bolsas.push({ x, y: -tamano, tamano, velocidad });
+            }
+
+            function actualizar(deltaSegundos) {
+                if (!activo) {
+                    return;
+                }
+
+                if (teclas.izquierda) {
+                    pinguino.x -= pinguino.velocidad * deltaSegundos;
+                }
+                if (teclas.derecha) {
+                    pinguino.x += pinguino.velocidad * deltaSegundos;
+                }
+
+                pinguino.x = Math.max(0, Math.min(canvas.width - pinguino.ancho, pinguino.x));
+
+                bolsas.forEach((bolsa) => {
+                    bolsa.y += bolsa.velocidad * deltaSegundos * 60;
+                });
+
+                detectarColisiones();
+
+                bolsas = bolsas.filter((bolsa) => {
+                    if (bolsa.y > canvas.height) {
+                        vidas -= 1;
+                        actualizarMarcadores();
+                        if (vidas <= 0) {
+                            terminarJuego();
+                        }
+                        return false;
+                    }
+                    return true;
+                });
+            }
+
+            function detectarColisiones() {
+                for (let i = bolsas.length - 1; i >= 0; i--) {
+                    const bolsa = bolsas[i];
+                    if (bolsa.x < pinguino.x + pinguino.ancho &&
+                        bolsa.x + bolsa.tamano > pinguino.x &&
+                        bolsa.y < pinguino.y + pinguino.alto &&
+                        bolsa.y + bolsa.tamano > pinguino.y) {
+                        bolsas.splice(i, 1);
+                        puntaje += 10;
+                        if (puntaje % 50 === 0) {
+                            nivel += 1;
+                            velocidadBaseBolsa += 0.8;
+                        }
+                        actualizarMarcadores();
+                    }
+                }
+            }
+
+            function actualizarMarcadores() {
+                marcadorPuntaje.textContent = puntaje;
+                marcadorVidas.textContent = vidas;
+                marcadorNivel.textContent = nivel;
+            }
+
+            function dibujar() {
+                contexto.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Suelo helado
+                contexto.fillStyle = '#0b2b4c';
+                contexto.fillRect(0, canvas.height - 60, canvas.width, 60);
+                contexto.fillStyle = '#7dd0ff';
+                contexto.fillRect(0, canvas.height - 50, canvas.width, 40);
+
+                // Pingüino estilizado
+                contexto.fillStyle = '#1f2a44';
+                contexto.beginPath();
+                contexto.ellipse(pinguino.x + pinguino.ancho / 2, pinguino.y + pinguino.alto / 2, 28, 32, 0, 0, Math.PI * 2);
+                contexto.fill();
+                contexto.fillStyle = '#ffffff';
+                contexto.beginPath();
+                contexto.ellipse(pinguino.x + pinguino.ancho / 2, pinguino.y + pinguino.alto / 2 + 4, 22, 24, 0, 0, Math.PI * 2);
+                contexto.fill();
+                contexto.fillStyle = '#ffb347';
+                contexto.beginPath();
+                contexto.moveTo(pinguino.x + pinguino.ancho / 2 - 10, pinguino.y + pinguino.alto / 2);
+                contexto.lineTo(pinguino.x + pinguino.ancho / 2 + 10, pinguino.y + pinguino.alto / 2);
+                contexto.lineTo(pinguino.x + pinguino.ancho / 2, pinguino.y + pinguino.alto / 2 + 18);
+                contexto.closePath();
+                contexto.fill();
+
+                // Bolsas
+                bolsas.forEach((bolsa) => {
+                    contexto.fillStyle = '#c58c1f';
+                    contexto.fillRect(bolsa.x, bolsa.y, bolsa.tamano, bolsa.tamano);
+                    contexto.fillStyle = '#8f6515';
+                    contexto.fillRect(bolsa.x, bolsa.y, bolsa.tamano, 8);
+                });
+            }
+
+            function terminarJuego() {
+                activo = false;
+                mensajeFinal.textContent = `¡Fin del juego! Puntaje final: ${puntaje}`;
+            }
+
+            function buclePrincipal(timestamp) {
+                if (!activo) {
+                    return;
+                }
+
+                const delta = timestamp - ultimoTiempo;
+                ultimoTiempo = timestamp;
+                const deltaSegundos = delta / 1000;
+
+                acumuladorAparicion += delta;
+                const intervaloActual = Math.max(900 - nivel * 90, 360);
+                if (acumuladorAparicion >= intervaloActual) {
+                    crearBolsa();
+                    acumuladorAparicion = 0;
+                }
+
+                actualizar(deltaSegundos);
+                dibujar();
+                solicitarFotograma();
+            }
+
+            // Comenzar partida inicial
+            dibujar();
+            solicitarFotograma();
+        })();
+    </h:outputScript>
+</h:body>
+</html>
